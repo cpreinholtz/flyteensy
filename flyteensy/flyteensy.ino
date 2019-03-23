@@ -2,22 +2,25 @@
 #include "rx.h"
 #include "time.h"
 #include "led.h"
-//#include "berry.h"
+#include "berry.h"
 
 
 
 ///////////////////////////////////////////////////////////////////////////////
-timer Timer(5);//5ms period to start
-led Led(LED_BUILTIN);//100 loop period to start
+const unsigned long LOOP_MSEC= 5; //5ms period to start
+timer Timer(LOOP_MSEC);
+berry Berry(LOOP_MSEC);
+led Led(LED_BUILTIN);
 SBUS x8r(Serial2);
 rx Rx;
-//berry Berry();
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
 void setup() {
   Serial.begin(115200);  // start serial for output  
   //Rx.setup();//does nothing xr8 below
+  Berry.setup();
   x8r.begin();
   Timer.setup();
   
@@ -30,7 +33,10 @@ void loop() {
   //////////////////////
   //high time priority
   Rx.run();
-  Rx.dbg();
+  //Rx.dbg();
+
+  Berry.run();
+  Berry.dbg();
 
 
 

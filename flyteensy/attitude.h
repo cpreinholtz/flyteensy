@@ -1,5 +1,6 @@
 
-
+#ifndef at_h
+#define at_h
 
 struct attitude  //type
 {
@@ -19,5 +20,5 @@ struct attitude  //type
    
 };
 
-
+#endif
 
