@@ -17,13 +17,13 @@ public:
   
   void run(){        
     poll_sensors();
-    //transform here?!?!
         
     measured=sensor_to_craft(cfilter);
     if(CalibrateAngle)calc_offsets();
   };
   
   void setup(){
+    Serial.println("Setting up BerryIMU");
     detectIMU();
     enableIMU(); 
 
@@ -36,6 +36,7 @@ public:
     measured.dbg();
   };
 
+  attitude getMeasured(){ return measured;  };
 
 
   
@@ -45,7 +46,7 @@ private:
   attitude offset, measured;
 
   bool CalibrateAngle=true;
-  
+  bool UPSIDEDOWN=true;
   float LOOP_PERIOD;  //seconds per loop
   const float G = 0.99;         // complementary filter constant
   const float A = (1-G);        // complementary filter constant
@@ -75,7 +76,17 @@ private:
     
     cf(cfilter.x, acc_pos.x, gyro_pos.x);//comlimentary filter
     cf(cfilter.y, acc_pos.y, gyro_pos.y);
-    cf(cfilter.z, heading,  gyro_pos.z);    
+
+
+    //heading will always be b/w 0 and 360 bc of trigg in the function
+    //problem is gpos can get above 360 (last cf is fedback and added to gyro rotation)
+    if ((gyro_pos.z >300) && (heading < 60) ) gyro_pos.z-=360.0;
+    else if ((gyro_pos.z <60)&& (heading >300) ) gyro_pos.z+=360.0;//not sure why we "trust" the mag more but it will be corrected later anywho
+    
+    cf(cfilter.z, heading,  gyro_pos.z); //gyro_pos.z);    
+    
+      if (cfilter.z<0.0) cfilter.z+=360; //this protect us from getting - headings or headings over 360 (not that it should matter)
+      else if(cfilter.z>360.0) cfilter.z+=360; 
     
   };
   
@@ -88,10 +99,16 @@ private:
     Icart a;
     byte buff[6];  
     readACC(buff);  
-    a.x=  bytes_to_int(buff[0] , buff[1]) ;//right is -x dir
-    a.y=- bytes_to_int(buff[2] , buff[3]) ; //front is -y dir
-    a.z=  bytes_to_int(buff[4] , buff[5]) ;  
-    /*DONT TOUCH
+    if (UPSIDEDOWN){//rotate sensore 180 deg about the x axis, invert and z and x ( because of the atan2 inverting z flips both x and y but we have the same x and opposite y so invert those)
+      a.x=- bytes_to_int(buff[0] , buff[1]) ;
+      a.y=- bytes_to_int(buff[2] , buff[3]) ;
+      a.z=- bytes_to_int(buff[4] , buff[5]) ;//craft top is -z dir
+    }else{
+      a.x=  bytes_to_int(buff[0] , buff[1]) ;//left is +x dir (left down is +roll)
+      a.y=- bytes_to_int(buff[2] , buff[3]) ; //front is -y dir (front down is + pitch)
+      a.z=  bytes_to_int(buff[4] , buff[5]) ; //craft top is +z dir
+    } 
+    /*DONT TOUCH (original vidor) this is the vidor setup
     a.x=  bytes_to_int(buff[0] , buff[1]) ;//right is -x dir
     a.y=- bytes_to_int(buff[2] , buff[3]) ; //front is -y dir
     a.z=  bytes_to_int(buff[4] , buff[5]) ;  */
@@ -105,11 +122,40 @@ private:
     Icart raw;
     byte buff[6]; 
     readGYR(buff);
+
+    //upside up
+            
+    //     back 
+    // --------------
+    //|_ _ _  |___|   |left
+    //|-|-|-|         |  
+    // ---------------
+    //  front
+    // 
+
+
+    //upside down (left and right remain the same) front/ up are swapped  (rotate about x axis, no change in x)
+    
+    //     back  
+    // --------------
+    //|  {}   \      |left
+    //|  {}   /      | 
+    // ---------------
+    //  front
+    // 
+    //+xrotation 
+    
+    if (UPSIDEDOWN){//flip about the x axis, invert y and z
+      raw.x = - bytes_to_int(buff[2] , buff[3] );       
+      raw.y =   bytes_to_int(buff[0] , buff[1] );
+      raw.z =   bytes_to_int(buff[4] , buff[5] );
+    } else{
+      raw.x = - bytes_to_int(buff[2] , buff[3] );       
+      raw.y = - bytes_to_int(buff[0] , buff[1] );
+      raw.z = - bytes_to_int(buff[4] , buff[5] );
+    }
+    /*DONT TOUCH (original vidor)
     raw.x = - bytes_to_int(buff[2] , buff[3] );   
-    raw.y = - bytes_to_int(buff[0] , buff[1] );
-    raw.z = - bytes_to_int(buff[4] , buff[5] );
-    /*DONT TOUCH
-      raw.x = - bytes_to_int(buff[2] , buff[3] );   
     raw.y = - bytes_to_int(buff[0] , buff[1] );
     raw.z = - bytes_to_int(buff[4] , buff[5] );*/
     return raw;
@@ -121,9 +167,15 @@ private:
     Icart m;
     byte buff[6]; 
     readMAG(buff);
-    m.x = bytes_to_int(buff[0] , buff[1] );   
-    m.y = bytes_to_int(buff[2] , buff[3] );
-    m.z = bytes_to_int(buff[4] , buff[5] );            
+    if (UPSIDEDOWN){//rotate about x axis, negate y and z
+      m.x =   bytes_to_int(buff[0] , buff[1] );   
+      m.y = - bytes_to_int(buff[2] , buff[3] );
+      m.z = - bytes_to_int(buff[4] , buff[5] );  
+    }else {
+      m.x =   bytes_to_int(buff[0] , buff[1] );   
+      m.y =   bytes_to_int(buff[2] , buff[3] );
+      m.z =   bytes_to_int(buff[4] , buff[5] ); 
+    }           
     return m;
   };
 
@@ -202,7 +254,7 @@ private:
     //float magYcomp = m.x*sin(cfilter.x)*sin(cfilter.y)+m.y*cos(cfilter.x)-m.z*sin(cfilter.x)*cos(cfilter.y); // LSM9DS0
     //Serial.print(magYcomp); Serial.println ("\t\t");
     
-    if(head < 0) head += 360; 
+    if(head < 0) head += 360; //this should yeild a 0 to 360 
     return head;
   };
   

@@ -18,9 +18,7 @@ class rx{
     void run(){//get last desired
         // look for a good SBUS packet from the receiver
       if(x8r.read(&channels[0], &failSafe, &lostFrame)){
-        updateDesired();
-    
-
+        updateDesired(); 
       }
     };
 
@@ -31,10 +29,6 @@ class rx{
     
     
     void dbg(){
-
-
-
-        
         desired.dbg();
     };
 
@@ -50,11 +44,22 @@ class rx{
     void updateDesired(){
       desired.roll=map(channels[rch], fromLow, fromHigh, toLow, toHigh);
       desired.pitch=map(channels[pch], fromLow, fromHigh, toLow, toHigh);
-      desired.yaw=map(channels[ych], fromLow, fromHigh, toLow, toHigh);
-      desired.throttle=channels[tch];
+      desired.yaw=map(channels[ych], fromLow, fromHigh, toLow, toHigh);      
+      desired.throttle=map(channels[tch], fromCenter, fromHigh, motor_min, motor_max);
+      //desired.throttle=map(channels[tch], fromLow, fromHigh, motor_min, motor_max);//dbg only
+      
       aux=channels[ach];
       mode=channels[mch];
     };
+
+
+
+    void updateAux(){
+
+    };
+    
+    attitude getDesired(){ return desired;};
+    float getDesiredThrottle(){ return desired.throttle;};
 
   private:
   
@@ -81,11 +86,17 @@ class rx{
     static const uint16_t mch= 5;
     
     
-    static const int mapCenter=1024;//unused   
+      
     static const int auxLow=600;//lessthan
     static const int auxHigh=1400;//lessthan
+
+    
+    float motor_min= 680;//uSeconds
+    float motor_start= 821;//blades start turning
+    float motor_max= 1400;
     
     //maps
+    static const int fromCenter=1024;
     static const int fromLow=240;
     static const int fromHigh=1807;
     static const int toLow=-255;

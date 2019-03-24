@@ -4,7 +4,7 @@
 
 class classname{
 public:
-  classname();
+  classname(){};
   void run();
   void setup();
   void dbg();

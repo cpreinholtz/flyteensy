@@ -1,0 +1,105 @@
+#ifndef pid_h
+#define pid_h
+
+#include "attitude.h"
+#include "pid_error.h"
+
+class pid{
+public:
+  pid(unsigned long msLoop){ 
+    LOOP_PERIOD=((float)msLoop)/1000; 
+    setupConstants();
+  };
+  
+  
+  
+  void run(error4d e){
+    pid_result.roll=get_pid_result(e.roll,kroll);
+    pid_result.pitch=get_pid_result(e.pitch,kpitch);  
+    pid_result.yaw=get_pid_result(e.yaw,kyaw); 
+    //Add Height if GPS is integrated 
+  };
+  attitude getResult(){return pid_result;  };
+  
+  void dbg(){
+    pid_result.dbg();
+    
+  };
+
+private:
+  PidConstants kroll,kpitch,kyaw, kheight;
+  float LOOP_PERIOD;
+  
+  //this is not so much an attitude as it is just a container o floats for roll pitch yaw a throttle 
+  attitude pid_result;
+
+
+  //calculates kp*p+ki*i+kd*d and returns result after max and min is applied
+  float get_pid_result(PidError err, PidConstants constant){
+    float result=0.0;      
+   
+    result+=constant.kp*err.p;//P
+    result+=constant.ki*err.i;//I
+    result+=constant.kd*err.d; //D
+    
+    /*if (result>=constant.max){
+      result=constant.max;
+      Serial.println("PID MAX HIT!");
+    }
+    else if(result<=constant.min){
+      result=constant.min;
+      Serial.println("PID MIN HIT!");
+    }*/
+    return result;   
+  };
+
+  void setupConstants(){
+      /////////////////////////////////////////////////////////////////
+    float kp =1.0;   
+    //0.5 feels too weak? no oscillation though 
+    //kp =0.55;  very slow oscilation, probably the best so far
+    //0.7 feels good, oscilation, present
+    //0.6 feels nice with slight oscilation
+    
+    float ki =0.00;//this is multiplied by LOOP_PERIOD
+    //0.35 seems ok, maybe too high, I am getting oscilations
+    //.05 feels too weak? too slow?
+    //.15 feels good with kp = 1.0 and kd = 0.02.  think i need a bit more ki and less kd???
+  
+    
+    float kd =0.00;//this is divided by LOOP_PERIOD
+    //better with 0.01
+    //felt ok with 0.02
+  //////////////////////////////////////////////////////////
+    
+    //Tune-able Parameters!!! 
+    kroll.kp=kp;
+    kroll.ki=ki;
+    kroll.kd=kd;    
+    //kroll.min= motor_max-motor_start *  -0.1 ;
+    //kroll.max= motor_max-motor_start *   0.1 ;
+  
+    kpitch.kp=kp;
+    kpitch.ki=ki;
+    kpitch.kd=kd;
+    //kpitch.min= motor_max-motor_start * -0.1 ;
+    //kpitch.max= motor_max-motor_start *  0.1 ;
+  
+    //DO NOT CHANGE UNLESS YOU FIX THE DESIRED YAW, IT LOCKS TO 0 CURRENTLY
+    kyaw.kp=0.00;
+    kyaw.ki=0.0 * LOOP_PERIOD;
+    kyaw.kd=0.0 / LOOP_PERIOD;
+    //kyaw.min= motor_max-motor_start  *  -0.1 ;
+    //kyaw.max= motor_max-motor_start *  0.1 ;
+  
+    kheight.kp=0.0;
+    kheight.ki=0.0 * LOOP_PERIOD;
+    kheight.kd=0.0 / LOOP_PERIOD;    
+    //kheight.min= motor_max-motor_start *  -0.1 ;
+    //kheight.max= motor_max-motor_start *   0.1 ;
+  
+  };
+
+};
+
+#endif
