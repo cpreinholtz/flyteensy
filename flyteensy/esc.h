@@ -52,13 +52,15 @@ private:
   PWMServo fl, fr, bl, br;
 
   Throttle usT,degT;
-
   
+
+  int aMax=130;
+  int aMin=50;
   Throttle usToDeg(Throttle t){
-    t.fl=map(t.fl,motor_min,motor_max,0,180);
-    t.fr=map(t.fr,motor_min,motor_max,0,180);
-    t.bl=map(t.bl,motor_min,motor_max,0,180);
-    t.br=map(t.br,motor_min,motor_max,0,180);  
+    t.fl=map(t.fl,motor_min,motor_max,aMin,aMax);
+    t.fr=map(t.fr,motor_min,motor_max,aMin,aMax);
+    t.bl=map(t.bl,motor_min,motor_max,aMin,aMax);
+    t.br=map(t.br,motor_min,motor_max,aMin,aMax);  
     return t; 
   };
 

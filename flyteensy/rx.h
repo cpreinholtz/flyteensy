@@ -15,10 +15,10 @@ class rx{
   public:
     rx(){};//ctor
     
-    void run(){//get last desired
+    void run(bool Cal){//get last desired
         // look for a good SBUS packet from the receiver
       if(x8r.read(&channels[0], &failSafe, &lostFrame)){
-        updateDesired(); 
+        updateDesired(Cal); 
       }
     };
 
@@ -41,21 +41,29 @@ class rx{
         Serial.println("\t");
     };
 
-    void updateDesired(){
+    void updateDesired(bool Cal){
       desired.roll=map(channels[rch], fromLow, fromHigh, toLow, toHigh);
       desired.pitch=map(channels[pch], fromLow, fromHigh, toLow, toHigh);
       desired.yaw=map(channels[ych], fromLow, fromHigh, toLow, toHigh);      
-      desired.throttle=map(channels[tch], fromCenter, fromHigh, motor_min, motor_max);
-      //desired.throttle=map(channels[tch], fromLow, fromHigh, motor_min, motor_max);//dbg only
+      if (!Cal) desired.throttle=map(channels[tch], fromCenter, fromHigh, motor_min, motor_max);
+      else desired.throttle=map(channels[tch], fromLow, fromHigh, motor_min, motor_max);   //dbg only (full range)
+
+      updateAux();
       
-      aux=channels[ach];
-      mode=channels[mch];
+      //aux=channels[ach];
+      //mode=channels[mch];
     };
 
 
 
     void updateAux(){
-
+      if (channels[swcCh]<auxLow)         mode=idle;//idle      
+      else if (channels[swcCh]>auxHigh)   mode=fly;
+      else {                              mode=offset;
+        if (channels[swbCh]<auxLow)         tune=d;   
+        else if (channels[swbCh]>auxHigh)   tune=p;
+        else tune=d;
+      }      
     };
     
     attitude getDesired(){ return desired;};
@@ -70,9 +78,21 @@ class rx{
     ///////////////////////////////////
 
     attitude desired;
-    uint16_t aux;
-    uint16_t mode;
-
+    
+    enum Mode{
+      idle=1,
+      offset=2,
+      fly      
+    };    
+    enum Tune{
+      p=1,
+      i,
+      d     
+    };
+    
+    Tune tune=p;
+    Mode mode=idle;
+    
     uint16_t channels[16];
     bool failSafe;
     bool lostFrame;
@@ -82,13 +102,12 @@ class rx{
     static const uint16_t pch= 1;
     static const uint16_t tch= 2;
     static const uint16_t ych= 3;
-    static const uint16_t ach= 4;
-    static const uint16_t mch= 5;
+    static const uint16_t swcCh= 4;
+    static const uint16_t swbCh= 5;
     
     
       
-    static const int auxLow=600;//lessthan
-    static const int auxHigh=1400;//lessthan
+
 
     
     float motor_min= 680;//uSeconds
@@ -102,6 +121,8 @@ class rx{
     static const int toLow=-255;
     static const int toHigh=255;
 
+    static const int auxLow =fromLow+300;
+    static const int auxHigh =fromHigh-300;
     
 
 };

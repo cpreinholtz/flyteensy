@@ -17,7 +17,7 @@ public:
     if(isExpired() ){
       Serial.print("TOO SLOW!!!!: loop time (ms)= ");Serial.println(millis() - startLoop);
     }  
-    while(!isExpired() ) { delayMicroseconds(1); }    
+    while(!isExpired() ) { ;}    
     startLoop=millis();//retart the count for the next loop
   };
   

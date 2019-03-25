@@ -44,14 +44,17 @@ void loop() {
   //////////////////////
   //high time priority 
 
+  bool Cal=false;
+
 
   Berry.run();
   //Berry.dbg();
   
-  Rx.run();
+  Rx.run(Cal);
   //Rx.dbg();
   
-  Error.run( Berry.getMeasured(), Rx.getDesired() );//this error is measured - desired
+  if (!Cal) Error.run( Berry.getMeasured(), Rx.getDesired() );//this error is measured - desired  
+  else Error.run( Rx.getDesired(), Rx.getDesired() );//dbg only (error always 0)
   //Error.dbg();
   
   Pid.run(Error.getError4d());
