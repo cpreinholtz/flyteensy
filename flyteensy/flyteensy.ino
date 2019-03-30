@@ -11,7 +11,9 @@
 
 
 ///////////////////////////////////////////////////////////////////////////////
-const unsigned long LOOP_MSEC= 5; //5ms period to start  //might be able to go down without dbg
+const unsigned long LOOP_MSEC= 4; //ms period to start  //might be able to go down without dbg?
+
+bool Cal=false; //DONT CAHNGE THIS UNLESS YOU HAVE REMOVED THE PROPS FOR ESC CALIBRATION!!!!!  (see below)
 rx Rx;
 berry Berry(LOOP_MSEC);
 error Error(LOOP_MSEC);
@@ -43,15 +45,17 @@ void setup() {
 void loop() {
   //////////////////////
   //high time priority 
+  
 
-  bool Cal=false;
+  
 
 
   Berry.run();
-  //Berry.dbg();
+  Berry.dbg();
   
   Rx.run(Cal);
   //Rx.dbg();
+  
   
   if (!Cal) Error.run( Berry.getMeasured(), Rx.getDesired() );//this error is measured - desired  
   else Error.run( Rx.getDesired(), Rx.getDesired() );//dbg only (error always 0)
@@ -63,13 +67,22 @@ void loop() {
   Plant.run( Rx.getDesiredThrottle(), Pid.getResult() );
   //Plant.dbg();
 
-  Esc.run(Plant.getThrottle());
-  Esc.dbg();
+
+  //based on RX MODE!
+  if (Rx.getMode()==rx::fly){
+    Esc.run(Plant.getThrottle());
+    Led.setRate(5);
+    
+  }
+  else{
+    Esc.idle();
+    Led.setRate(100);
+  }
+  //Esc.dbg();
 
 
   //////////////////////
   //low priority
-
   //if (!Timer.expired){
     Led.run(Timer.getEpoch());//blink rate
     //Rx.updateAux();

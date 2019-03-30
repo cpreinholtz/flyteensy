@@ -16,6 +16,13 @@ struct throttle_container  //type
     Serial.print("br: ");Serial.print(br);Serial.print("\t\t");
     Serial.println("");
   };
+
+  void operator = (float setTo){
+    fl=setTo;
+    fr=setTo;
+    bl=setTo;
+    br=setTo;    
+  }
 };
 typedef struct throttle_container Throttle;
 

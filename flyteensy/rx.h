@@ -24,13 +24,13 @@ class rx{
 
     void setup(){
 
-    };
+    };//ctor
 
     
     
     void dbg(){
         desired.dbg();
-    };
+    };//dbg
 
     void printRaw(){
         int i;
@@ -39,7 +39,7 @@ class rx{
           Serial.print("\t");
         }
         Serial.println("\t");
-    };
+    };//print raw
 
     void updateDesired(bool Cal){
       desired.roll=map(channels[rch], fromLow, fromHigh, toLow, toHigh);
@@ -52,22 +52,41 @@ class rx{
       
       //aux=channels[ach];
       //mode=channels[mch];
-    };
+    };//update desired
 
 
 
     void updateAux(){
       if (channels[swcCh]<auxLow)         mode=idle;//idle      
-      else if (channels[swcCh]>auxHigh)   mode=fly;
+      else if (channels[swcCh]>auxHigh)   mode=fly;//flight      
+      //offset mode
       else {                              mode=offset;
         if (channels[swbCh]<auxLow)         tune=d;   
         else if (channels[swbCh]>auxHigh)   tune=p;
         else tune=d;
       }      
-    };
+      
+    };//update aux
     
+    //enums for modes and aux channels
+    enum Mode{
+      idle=1,
+      offset,
+      fly   
+    };    
+    enum Tune{
+      p=1,
+      i,
+      d   
+    }; 
+    
+    //getters
     attitude getDesired(){ return desired;};
     float getDesiredThrottle(){ return desired.throttle;};
+    Mode getMode(){return mode;};
+
+ 
+    
 
   private:
   
@@ -79,16 +98,7 @@ class rx{
 
     attitude desired;
     
-    enum Mode{
-      idle=1,
-      offset=2,
-      fly      
-    };    
-    enum Tune{
-      p=1,
-      i,
-      d     
-    };
+
     
     Tune tune=p;
     Mode mode=idle;
@@ -118,8 +128,8 @@ class rx{
     static const int fromCenter=1024;
     static const int fromLow=240;
     static const int fromHigh=1807;
-    static const int toLow=-255;
-    static const int toHigh=255;
+    static const int toLow=-50;
+    static const int toHigh=50;
 
     static const int auxLow =fromLow+300;
     static const int auxHigh =fromHigh-300;
