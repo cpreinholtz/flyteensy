@@ -21,9 +21,8 @@ public:
       if      (command=='p') { k.kp=val; type=command;}
       else if (command=='i') { k.ki=val; type=command;}
       else if (command=='d') { k.kd=val; type=command;}
-
+      available=true;
       k.dbg();
-
     }
   };
 
@@ -36,7 +35,9 @@ public:
     k.min=con.min;
     Serial.setTimeout(100);
   };
-  
+
+  PidConstants getConstants(){return k; available=false;};
+  bool isAvailable(){return available;};
   void dbg();
 
 
@@ -45,6 +46,7 @@ private:
   PidConstants k;
   //float kp,ki,kd;
   char type;
+  bool available=false;
 
 };
 

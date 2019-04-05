@@ -57,15 +57,15 @@ class rx{
 
 
     void updateAux(){
-      if (channels[swcCh]<auxLow)         mode=idle;//idle      
-      else if (channels[swcCh]>auxHigh)   mode=fly;//flight      
-      //offset mode
-      else {                              mode=offset;
-        if (channels[swbCh]<auxLow)         tune=d;   
-        else if (channels[swbCh]>auxHigh)   tune=p;
-        else tune=d;
-      }      
+      if (channels[swcCh]<auxLow)         mode=idle;    //idle=up 
+      else if (channels[swcCh]>auxHigh)   mode=fly;     //flight=down
+      else                                mode=offset;  //offset=middle
       
+      if (channels[swbCh]<auxLow)         tune=up;      //up no dbg prints
+      else if (channels[swbCh]>auxHigh)   {tune=down;   desired.throttle=motor_hover;} //down if(mode=fly) set throttle to baseline hover
+      else                                tune=middle;  //middle cleat ki and print
+
+        
     };//update aux
     
     //enums for modes and aux channels
@@ -74,17 +74,19 @@ class rx{
       offset,
       fly   
     };    
+    
     enum Tune{
-      p=1,
-      i,
-      d   
+      up=1,
+      down,
+      middle   
     }; 
     
     //getters
     attitude getDesired(){ return desired;};
     float getDesiredThrottle(){ return desired.throttle;};
+    
     Mode getMode(){return mode;};
-
+    Tune getTune(){return tune;};
  
     
 
@@ -100,7 +102,7 @@ class rx{
     
 
     
-    Tune tune=p;
+    Tune tune=up;
     Mode mode=idle;
     
     uint16_t channels[16];
@@ -123,6 +125,7 @@ class rx{
     float motor_min= 680;//uSeconds
     float motor_start= 821;//blades start turning
     float motor_max= 1400;
+    float motor_hover= 1150;
     
     //maps
     static const int fromCenter=1024;

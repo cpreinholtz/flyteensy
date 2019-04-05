@@ -31,12 +31,22 @@ public:
 
   error4d getError4d(){return e; };
   
+  void clearI(){
+    e.roll.i=0.0;
+    e.pitch.i=0.0;
+    e.yaw.i=0.0;
+  };
+  
   void dbg(){
     e.roll.dbg();
   };
+  void csv(){
+    e.roll.csv();
+  };
 
 private:
-  const float i_error_max= 100.0;
+  //used to be 100 const float i_error_max= .0;
+  const float i_error_max= 10;
   float LOOP_PERIOD;
   
   error4d e; //PidError eroll, epitch, eyaw, eheight;
@@ -46,8 +56,19 @@ private:
   ///////////////////////////////////////////////////////
   //ERROR AND PID
   void get_single_error(PidError & err, float temp ){
+    //temp = this measurment
 
-    err.d=(temp-err.p)/LOOP_PERIOD;
+    
+
+
+    float dRaw=(temp-err.p)/LOOP_PERIOD/2;
+    float C=0.15; //this is the weight of the CURRENT d,  1.0-this is the IIR weight
+    
+    err.d=(C*dRaw)+((1-C)*err.d);
+
+    //preserve the archived calculation for reference
+    //err.d=(temp-err.p)/LOOP_PERIOD;
+    //err.d=(temp-err.p);
     
     err.p=temp;
 

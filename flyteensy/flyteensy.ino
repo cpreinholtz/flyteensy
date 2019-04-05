@@ -7,6 +7,7 @@
 #include "pid.h"
 #include "plant.h"
 #include "esc.h"
+#include "serial_tuning.h"
 
 
 
@@ -20,6 +21,7 @@ error Error(LOOP_MSEC);
 pid Pid(LOOP_MSEC);
 plant Plant;
 esc Esc;
+serial_tuner Tuner;
 
 timer Timer(LOOP_MSEC);
 led Led(LED_BUILTIN);
@@ -36,22 +38,27 @@ void setup() {
   x8r.begin();//starts SBUS objext
   Timer.setup();//sets time to 0
   Esc.setup();
-  
+  Tuner.setup(Pid.getRollConstants());
+
 }
 
 
 
 ///////////////////////////////////////////////////////////////////////////////
 void loop() {
-  //////////////////////
-  //high time priority 
+
+
+
+  //FLOW OF OPERATION IN FLIGHT CONTROLLER
+  //berry+rx->error->pid->plant->motors
+  //->led+otherstuff->timer
   
 
   
 
 
   Berry.run();
-  Berry.dbg();
+  //Berry.dbg();
   
   Rx.run(Cal);
   //Rx.dbg();
@@ -59,7 +66,10 @@ void loop() {
   
   if (!Cal) Error.run( Berry.getMeasured(), Rx.getDesired() );//this error is measured - desired  
   else Error.run( Rx.getDesired(), Rx.getDesired() );//dbg only (error always 0)
+  if (Rx.getTune()==rx::middle) Error.clearI();
   //Error.dbg();
+
+  
   
   Pid.run(Error.getError4d());
   //Pid.dbg();
@@ -71,8 +81,7 @@ void loop() {
   //based on RX MODE!
   if (Rx.getMode()==rx::fly){
     Esc.run(Plant.getThrottle());
-    Led.setRate(5);
-    
+    Led.setRate(5);    
   }
   else{
     Esc.idle();
@@ -81,20 +90,28 @@ void loop() {
   //Esc.dbg();
 
 
-  //////////////////////
-  //low priority
-  //if (!Timer.expired){
-    Led.run(Timer.getEpoch());//blink rate
-    //Rx.updateAux();
-  //}
-    
 
+  Led.run(Timer.getEpoch());//blink rate
 
+  Tuner.run();//recive pid tuning commands via serial
+  if(Tuner.isAvailable()) Pid.setRollConstants(Tuner.getConstants());
 
+  
+  //print statments  epoch, e.roll.p, e.roll.i, e.roll.d, result.roll, kp, ki, kd
+  if (Rx.getTune()!=rx::up){
+    Timer.csv();//epoch
+    Error.csv();//e.roll.p, e.roll.i, e.roll.d 
+    Pid.csv();//result.roll
+    Pid.csvRollConstants();
+    Serial.println("");
+  }
+  
   ////////////////////
   //Timed loop control
-  
+  //Serial.println("");  
   Timer.run(); //delay till timeout
+
+  
 
   
 }

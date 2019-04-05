@@ -41,6 +41,10 @@ public:
     Serial.print(slowestLoop);
     Serial.print("\tfastest:\t");
     Serial.println(fastestLoop);
+  };  
+  void csv(){    
+    Serial.print(epoch);Serial.print(",");
+
   };
   
   void setPeriodS(unsigned long s){

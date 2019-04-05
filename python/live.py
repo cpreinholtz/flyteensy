@@ -6,7 +6,7 @@ from multiprocessing import Process
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
-
+from matplotlib.widgets import Slider, Button, RadioButtons
 #import matplotlib
 #print(matplotlib.matplotlib_fname())
 #import matplotlib.rcsetup as rcsetup
@@ -25,7 +25,7 @@ from matplotlib import style
 ser = serial.Serial('/dev/ttyACM0')
 
 maxSamples=250*10  #(250 hz * 10 seconds)
-refreshAt=80
+refreshAt=100
 refresh=0
 
 
@@ -34,9 +34,9 @@ ep=[]
 ei=[]
 ed=[]
 result=[]
-kp=0
-ki=0
-kd=0
+kp=1.0
+ki=0.5
+kd=0.1
 
 
 epoch_index=0
@@ -56,24 +56,70 @@ total_len=8
 style.use('fivethirtyeight')
 
 fig = plt.figure()
+
 ax1 = fig.add_subplot(1,1,1)
+#ax=   fig.add_subplot(1,1,1)
+plt.subplots_adjust(left=0.1, bottom=0.25)
+
+
+
+
 
 def animate():
   global ax1
-  global epoch, ep, ei, ed, result
+  global epoch, ep, ei, ed, result, kp, ki, kd
 
   ax1.clear()
   #ax1.plot()
-  ax1.plot(ep,label='error.p')
-  ax1.plot(ei,label='error.i')
-  ax1.plot(ed,label='error.d')
-  ax1.plot(result,label='result')
-  ax1.ylim(-75,75)
+  ax1.plot(epoch,ep,label='error.p')
+  ax1.plot(epoch,ei,label='error.i')
+  ax1.plot(epoch,ed,label='error.d')
+  ax1.plot(epoch, result,label='result')
+  plt.ylim(-75,75)
+  
+  
+  
+  
   ax1.legend()
   plt.pause(0.000001)
   
-  
 
+def updateKp(val):
+  global ser
+  print("KP slider changed"); print (val)
+  sent="p"+"{:.3f}\r\n".format(val)
+  ser.write(sent.encode())
+  print (sent)
+  
+  
+def updateKi(val):
+  global ser
+  print("KI slider changed");  print (val)
+  sent="i"+"{:.3f}\r\n".format(val)
+  ser.write(sent.encode())
+  print (sent)
+  
+def updateKd(val):
+  global ser
+  print("KD slider changed");  print (val)
+  sent="d"+"{:.3f}\r\n".format(val)
+  ser.write(sent.encode())
+  print (sent)
+   
+  
+delta_f = 0.05
+axcolor = 'lightgoldenrodyellow'
+kpax = plt.axes([0.1, 0.15, 0.8, 0.03], facecolor=axcolor)  
+kiax = plt.axes([0.1, 0.1, 0.8, 0.03], facecolor=axcolor)  
+kdax = plt.axes([0.1, 0.05, 0.8, 0.03], facecolor=axcolor)  
+
+kpslider = Slider(kpax, 'KP', 0.0, 4.0, valinit=kp, valstep=delta_f)
+kislider = Slider(kiax, 'KI', 0.0, 4.0, valinit=ki, valstep=delta_f)
+kdslider = Slider(kdax, 'KD', 0.0, 4.0, valinit=kd, valstep=delta_f)
+
+kpslider.on_changed(updateKp)
+kislider.on_changed(updateKi)
+kdslider.on_changed(updateKd)
 
 
   
@@ -128,9 +174,14 @@ while True:
       print("refreshing")
       #p.join()
 
-  except KeyboardInterrupt:    print("quitting"); exit()
+  except KeyboardInterrupt:    
+    print("quitting");
+    print("kp: "+str(kp));
+    print("ki: "+str(ki));
+    print("kd: "+str(kd));
+    exit()
   except TypeError:    print("type error"); 
-  except Exception as e: print(e)
+  except Exception as e: print(e)   
         
 
 

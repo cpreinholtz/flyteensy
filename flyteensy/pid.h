@@ -19,11 +19,29 @@ public:
     pid_result.yaw=get_pid_result(e.yaw,kyaw); 
     //Add Height if GPS is integrated 
   };
+  
   attitude getResult(){return pid_result;  };
+
+  
+  PidConstants getRollConstants(){return kroll;  };
+  void setRollConstants(PidConstants con){
+    kroll.kp=con.kp;
+    kroll.ki=con.ki;
+    kroll.kd=con.kd;
+    kroll.max=con.max;
+    kroll.min=con.min;
+  };
+
   
   void dbg(){
-    pid_result.dbg();
-    
+    pid_result.dbg();    
+  };
+  
+  void csv(){
+    Serial.print(pid_result.roll); Serial.print(","); 
+  };
+  void csvRollConstants(){
+    kroll.csv();
   };
 
 private:
@@ -55,19 +73,30 @@ private:
 
   void setupConstants(){
       /////////////////////////////////////////////////////////////////
-    float kp =1.0;   
+    //float kp =1.0;
+    float kp =1.0;
     //0.5 feels too weak? no oscillation though 
     //kp =0.55;  very slow oscilation, probably the best so far
     //0.7 feels good, oscilation, present
     //0.6 feels nice with slight oscilation
     
-    float ki =0.00;//this is multiplied by LOOP_PERIOD
+    float ki =kp*0.50;//this is multiplied by LOOP_PERIOD
+    //ki =0.0;
     //0.35 seems ok, maybe too high, I am getting oscilations
     //.05 feels too weak? too slow?
     //.15 feels good with kp = 1.0 and kd = 0.02.  think i need a bit more ki and less kd???
   
     
-    float kd =0.00;//this is divided by LOOP_PERIOD
+    float kd =kp*0.1;//this is divided by LOOP_PERIOD  //warning: error.d is already halfed
+    
+    //float kd =kp*0.3;//too high
+    //float kd =kp*0.2;//pretty good
+    //kd =0.0;
+    //.05 too weak? 
+
+
+
+    
     //better with 0.01
     //felt ok with 0.02
   //////////////////////////////////////////////////////////
