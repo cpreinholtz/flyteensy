@@ -48,7 +48,8 @@ private:
   bool CalibrateAngle=true;
   bool UPSIDEDOWN=true;
   float LOOP_PERIOD;  //seconds per loop
-  const float G = 0.99;         // complementary filter constant
+  //const float G = 0.99;         // complementary filter constant
+  const float G = 0.995;         // complementary filter constant
   const float A = (1-G);        // complementary filter constant
   float G_GAIN=0.070;
   
@@ -81,12 +82,10 @@ private:
     //heading will always be b/w 0 and 360 bc of trigg in the function
     //problem is gpos can get above 360 (last cf is fedback and added to gyro rotation)
     if ((gyro_pos.z >300) && (heading < 60) ) gyro_pos.z-=360.0;
-    else if ((gyro_pos.z <60)&& (heading >300) ) gyro_pos.z+=360.0;//not sure why we "trust" the mag more but it will be corrected later anywho
-    
-    cf(cfilter.z, heading,  gyro_pos.z); //gyro_pos.z);    
-    
-      if (cfilter.z<0.0) cfilter.z+=360; //this protect us from getting - headings or headings over 360 (not that it should matter)
-      else if(cfilter.z>360.0) cfilter.z+=360; 
+    else if ((gyro_pos.z <60)&& (heading >300) ) gyro_pos.z+=360.0;//not sure why we "trust" the mag more but it will be corrected later anywho    
+    cf(cfilter.z, heading,  gyro_pos.z); //gyro_pos.z);        
+    if (cfilter.z<0.0) cfilter.z+=360; //this protect us from getting - headings or headings over 360 (not that it should matter)
+    else if(cfilter.z>360.0) cfilter.z+=360; 
     
   };
   

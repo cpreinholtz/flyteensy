@@ -24,6 +24,7 @@ class rx{
 
     void setup(){
 
+
     };//ctor
 
     
@@ -44,11 +45,15 @@ class rx{
     void updateDesired(bool Cal){
       desired.roll=map(channels[rch], fromLow, fromHigh, toLow, toHigh);
       desired.pitch=map(channels[pch], fromLow, fromHigh, toLow, toHigh);
-      desired.yaw=map(channels[ych], fromLow, fromHigh, toLow, toHigh);      
+      
+      //desired.yaw=map(channels[ych], fromLow, fromHigh, toLow, toHigh);  
+      //
+          
       if (!Cal) desired.throttle=map(channels[tch], fromCenter, fromHigh, motor_min, motor_max);
       else desired.throttle=map(channels[tch], fromLow, fromHigh, motor_min, motor_max);   //dbg only (full range)
 
       updateAux();
+      deadman();
       
       //aux=channels[ach];
       //mode=channels[mch];
@@ -60,7 +65,7 @@ class rx{
       if (channels[swcCh]<auxLow)         mode=idle;    //idle=up 
       else if (channels[swcCh]>auxHigh)   mode=fly;     //flight=down
       else                                mode=offset;  //offset=middle
-      
+
       if (channels[swbCh]<auxLow)         tune=up;      //up no dbg prints
       else if (channels[swbCh]>auxHigh)   {tune=down;   desired.throttle=motor_hover;} //down if(mode=fly) set throttle to baseline hover
       else                                tune=middle;  //middle cleat ki and print
@@ -84,7 +89,7 @@ class rx{
     //getters
     attitude getDesired(){ return desired;};
     float getDesiredThrottle(){ return desired.throttle;};
-    
+    void setDesiredYaw(float y){ desired.yaw=y;};
     Mode getMode(){return mode;};
     Tune getTune(){return tune;};
  
@@ -98,7 +103,7 @@ class rx{
 
     ///////////////////////////////////
 
-    attitude desired;
+    attitude desired={0.0,0.0,0.0,0.0};//set yaw here
     
 
     
@@ -125,7 +130,7 @@ class rx{
     float motor_min= 680;//uSeconds
     float motor_start= 821;//blades start turning
     float motor_max= 1400;
-    float motor_hover= 1150;
+    float motor_hover= 950;
     
     //maps
     static const int fromCenter=1024;
@@ -136,6 +141,25 @@ class rx{
 
     static const int auxLow =fromLow+300;
     static const int auxHigh =fromHigh-300;
+
+
+
+    int sameCount=0;
+    static const int DIE=100;
+    float last=0.0;
+    
+    void deadman(){      
+      if (desired.throttle==last) sameCount++;
+      else sameCount=0;
+
+
+      last=desired.throttle;   
+               
+      if (sameCount>=DIE){
+        desired.throttle=motor_min;
+        sameCount=DIE;
+      }
+    };
     
 
 };

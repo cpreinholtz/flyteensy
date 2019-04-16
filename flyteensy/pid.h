@@ -74,20 +74,20 @@ private:
   void setupConstants(){
       /////////////////////////////////////////////////////////////////
     //float kp =1.0;
-    float kp =1.0;
+    float kp =1.1;
     //0.5 feels too weak? no oscillation though 
     //kp =0.55;  very slow oscilation, probably the best so far
     //0.7 feels good, oscilation, present
     //0.6 feels nice with slight oscilation
     
-    float ki =kp*0.50;//this is multiplied by LOOP_PERIOD
+    float ki =0.10;//this is multiplied by LOOP_PERIOD
     //ki =0.0;
     //0.35 seems ok, maybe too high, I am getting oscilations
     //.05 feels too weak? too slow?
     //.15 feels good with kp = 1.0 and kd = 0.02.  think i need a bit more ki and less kd???
   
     
-    float kd =kp*0.1;//this is divided by LOOP_PERIOD  //warning: error.d is already halfed
+    float kd =1.05;//this is divided by LOOP_PERIOD  //warning: error.d is already halfed
     
     //float kd =kp*0.3;//too high
     //float kd =kp*0.2;//pretty good
@@ -108,16 +108,28 @@ private:
     //kroll.min= motor_max-motor_start *  -0.1 ;
     //kroll.max= motor_max-motor_start *   0.1 ;
   
+    kpitch.kp=0.0;//kp;
+    kpitch.ki=0.0;//ki;
+    kpitch.kd=0.0;//kd;
     kpitch.kp=kp;
     kpitch.ki=ki;
     kpitch.kd=kd;
+    
     //kpitch.min= motor_max-motor_start * -0.1 ;
     //kpitch.max= motor_max-motor_start *  0.1 ;
   
     //DO NOT CHANGE UNLESS YOU FIX THE DESIRED YAW, IT LOCKS TO 0 CURRENTLY
-    kyaw.kp=0.00;
-    kyaw.ki=0.0 * LOOP_PERIOD;
-    kyaw.kd=0.0 / LOOP_PERIOD;
+
+    float kyawDiv=5.0;
+    kyaw.kp=kp/kyawDiv;
+    kyaw.ki=ki/kyawDiv;
+    kyaw.kd=kd/kyawDiv;
+
+    
+    
+    //kyaw.kp=0.00;
+    //kyaw.ki=0.0 * LOOP_PERIOD;
+    //kyaw.kd=0.0 / LOOP_PERIOD;
     //kyaw.min= motor_max-motor_start  *  -0.1 ;
     //kyaw.max= motor_max-motor_start *  0.1 ;
   

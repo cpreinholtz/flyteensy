@@ -51,6 +51,7 @@ struct pid_error  //type
     Serial.print(i);Serial.print(",");
     Serial.print(d);Serial.print(",");
    };
+   
 };
 typedef struct pid_error PidError;
 

@@ -8,6 +8,7 @@
 #include "plant.h"
 #include "esc.h"
 #include "serial_tuning.h"
+#include "imu9250.h"
 
 
 
@@ -22,6 +23,8 @@ pid Pid(LOOP_MSEC);
 plant Plant;
 esc Esc;
 serial_tuner Tuner;
+MPU9250 IMU(0x68);
+imu9250 Imu9250(LOOP_MSEC);
 
 timer Timer(LOOP_MSEC);
 led Led(LED_BUILTIN);
@@ -33,12 +36,12 @@ SBUS x8r(Serial2);
 ///////////////////////////////////////////////////////////////////////////////
 void setup() {
   Serial.begin(115200);  // start serial for output  
-  //Rx.setup();//does nothing xr8 below
-  Berry.setup();//detects and starts IMU
+  //Berry.setup();//detects and starts IMU
   x8r.begin();//starts SBUS objext
   Timer.setup();//sets time to 0
   Esc.setup();
   Tuner.setup(Pid.getRollConstants());
+  Imu9250.setup();
 
 }
 
@@ -57,17 +60,35 @@ void loop() {
   
 
 
-  Berry.run();
+  Imu9250.run();
+  //Imu9250.dbg();
+  //Imu9250.dbgRaw();
+  //Imu9250.dbgGyroRate();
+  //Imu9250.dbgGyroPos();
+  //Imu9250.dbgAcc();
+  //Imu9250.dbgMag();
+  
+  if (Rx.getMode()==rx::idle){Imu9250.calcOffset();}
+
+
+  
+  //Berry.run();
   //Berry.dbg();
+
+
+  
   
   Rx.run(Cal);
   //Rx.dbg();
+  if (Rx.getMode()==rx::idle){Rx.setDesiredYaw(Imu9250.getYawOffset());}
   
-  
-  if (!Cal) Error.run( Berry.getMeasured(), Rx.getDesired() );//this error is measured - desired  
+  if (!Cal) Error.run( Imu9250.getMeasured(), Rx.getDesired() );//this error is measured - desired  
   else Error.run( Rx.getDesired(), Rx.getDesired() );//dbg only (error always 0)
-  if (Rx.getTune()==rx::middle) Error.clearI();
+  if (Rx.getTune()==rx::middle|| Rx.getMode()!=rx::fly) Error.clearI();
   //Error.dbg();
+  //Error.dbgPitch();
+  Error.dbgYaw();
+  
 
   
   
@@ -98,12 +119,14 @@ void loop() {
 
   
   //print statments  epoch, e.roll.p, e.roll.i, e.roll.d, result.roll, kp, ki, kd
-  if (Rx.getTune()!=rx::up){
+  if (Rx.getMode()!=rx::idle){
+     /*
     Timer.csv();//epoch
     Error.csv();//e.roll.p, e.roll.i, e.roll.d 
     Pid.csv();//result.roll
     Pid.csvRollConstants();
     Serial.println("");
+    // */
   }
   
   ////////////////////

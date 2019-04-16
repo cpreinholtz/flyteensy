@@ -24,7 +24,7 @@ from matplotlib.widgets import Slider, Button, RadioButtons
 #Serial
 ser = serial.Serial('/dev/ttyACM0')
 
-maxSamples=250*10  #(250 hz * 10 seconds)
+maxSamples=250*5  #(250 hz * 10 seconds)
 refreshAt=100
 refresh=0
 
@@ -34,9 +34,9 @@ ep=[]
 ei=[]
 ed=[]
 result=[]
-kp=1.0
-ki=0.5
-kd=0.1
+kp=1.7
+ki=0.7
+kd=2.65
 
 
 epoch_index=0
@@ -62,28 +62,6 @@ ax1 = fig.add_subplot(1,1,1)
 plt.subplots_adjust(left=0.1, bottom=0.25)
 
 
-
-
-
-def animate():
-  global ax1
-  global epoch, ep, ei, ed, result, kp, ki, kd
-
-  ax1.clear()
-  #ax1.plot()
-  ax1.plot(epoch,ep,label='error.p')
-  ax1.plot(epoch,ei,label='error.i')
-  ax1.plot(epoch,ed,label='error.d')
-  ax1.plot(epoch, result,label='result')
-  plt.ylim(-75,75)
-  
-  
-  
-  
-  ax1.legend()
-  plt.pause(0.000001)
-  
-
 def updateKp(val):
   global ser
   print("KP slider changed"); print (val)
@@ -105,6 +83,24 @@ def updateKd(val):
   sent="d"+"{:.3f}\r\n".format(val)
   ser.write(sent.encode())
   print (sent)
+
+
+def animate():
+  global ax1
+  global epoch, ep, ei, ed, result, kp, ki, kd
+  ax1.clear()
+  #ax1.plot()
+  ax1.plot(epoch,ep,label='error.p')
+  ax1.plot(epoch,ei,label='error.i')
+  ax1.plot(epoch,ed,label='error.d')
+  ax1.plot(epoch, result,label='result')
+  ax1.legend()
+  x1,x2,y1,y2 = plt.axis()
+  plt.axis((x1,x2,-50,50))  
+  plt.pause(0.000001)
+  
+
+
    
   
 delta_f = 0.05
@@ -113,9 +109,9 @@ kpax = plt.axes([0.1, 0.15, 0.8, 0.03], facecolor=axcolor)
 kiax = plt.axes([0.1, 0.1, 0.8, 0.03], facecolor=axcolor)  
 kdax = plt.axes([0.1, 0.05, 0.8, 0.03], facecolor=axcolor)  
 
-kpslider = Slider(kpax, 'KP', 0.0, 4.0, valinit=kp, valstep=delta_f)
-kislider = Slider(kiax, 'KI', 0.0, 4.0, valinit=ki, valstep=delta_f)
-kdslider = Slider(kdax, 'KD', 0.0, 4.0, valinit=kd, valstep=delta_f)
+kpslider = Slider(kpax, 'KP', 0.0, 6.0, valinit=kp, valstep=delta_f)
+kislider = Slider(kiax, 'KI', 0.0, 6.0, valinit=ki, valstep=delta_f)
+kdslider = Slider(kdax, 'KD', 0.0, 6.0, valinit=kd, valstep=delta_f)
 
 kpslider.on_changed(updateKp)
 kislider.on_changed(updateKi)
